@@ -1,20 +1,29 @@
+import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { bookRoutes } from './routes/book';
+import { testDatabaseConnection } from './db/db.connect';
 
-import 'dotenv/config';
 
 const app = Fastify({ logger: false });
 
-app.register(cors, {
-  origin: 'http://localhost:5173', // your Vite dev server's origin
-});
+async function start() {
+  try {
+    await app.register(cors, {
+      origin: 'http://localhost:5173',
+    });
 
-app.register(bookRoutes);
+    app.register(bookRoutes);
 
-app.listen({ port: 3001 }, (err) => {
-  if (err) {
-    app.log.error(err);
+    await testDatabaseConnection();
+
+    await app.listen({ port: 3001 });
+
+    console.log('Server running on port 3001');
+  } catch (error) {
+    console.error(error);
     process.exit(1);
   }
-});
+}
+
+start();
