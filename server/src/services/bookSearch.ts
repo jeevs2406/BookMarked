@@ -1,39 +1,30 @@
 import { BookSearchResult } from "../types";
 
 export async function searchBooks(query: string): Promise<BookSearchResult[]> {
-  console.log("Reaches service");
-
+  console.log("This is called")
   const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+  const q = query.trim() || 'bestseller';
 
-  console.log(apiKey)
-
-  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20${apiKey ? `&key=${apiKey}` : ''}`;
-
-  console.log("Before Google fetch");
+  const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&printType=books&orderBy=relevance&maxResults=20${apiKey ? `&key=${apiKey}` : ''}`;
 
   const res = await fetch(url);
-
-  console.log("After Google fetch");
-
   const data = await res.json();
-
-  console.log("After JSON");
-  console.log(data)
 
   if (!data.items) return [];
 
-  console.log(data)
+  console.log(data.items[0].volumeInfo)
 
-  const polished_data = data.items.map((item: any) => ({
+  return data.items
+  .filter((item: any) => item.volumeInfo.imageLinks?.thumbnail)
+  .map((item: any) => ({
     googleBooksId: item.id,
     title: item.volumeInfo.title ?? 'Untitled',
     author: item.volumeInfo.authors?.join(', ') ?? 'Unknown author',
     genre: item.volumeInfo.categories?.[0] ?? null,
     coverUrl: item.volumeInfo.imageLinks?.thumbnail ?? null,
     pageCount: item.volumeInfo.pageCount ?? null,
-  }));
+    ratingsCount: item.volumeInfo.ratingsCount ?? 0,
+  }))
+  .sort((a: any, b: any) => b.ratingsCount - a.ratingsCount);
 
-  console.log(polished_data)
-
-  return polished_data
 }

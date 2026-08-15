@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookCard } from '../components/BookCard';
 import type { BookSearchResult } from '../types'
 
@@ -7,15 +7,22 @@ export function BrowseBooks() {
   const [results, setResults] = useState<BookSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
 
-  async function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    if (!query.trim()) return;
+  // Run once on mount, with an empty query — triggers the default view
+  useEffect(() => {
+    runSearch('');
+  }, []);
+
+  async function runSearch(searchQuery: string) {
     setLoading(true);
-    const res = await fetch(`http://localhost:3001/api/books/search?q=${encodeURIComponent(query)}`);
+    const res = await fetch(`http://localhost:3001/api/books/search?q=${encodeURIComponent(searchQuery)}`);
     const data = await res.json();
-    console.log(data)
     setResults(data);
     setLoading(false);
+  }
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    runSearch(query);
   }
 
   return (

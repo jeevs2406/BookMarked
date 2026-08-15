@@ -15,4 +15,5 @@ export interface BookSearchResult {
   genre: string | null;
   coverUrl: string | null;
   pageCount: number | null;
+  ratingsCount: number| null
 }
