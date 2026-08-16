@@ -4,7 +4,6 @@ import { books } from "../db/schema";
 import type { BookStatus, AddBookRequest } from "../../types/book";
 
 export async function getLibraryBooks() {
-  console.log("library getter");
   return await db.select().from(books);
 }
 

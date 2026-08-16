@@ -1,8 +1,15 @@
 import { FastifyInstance } from "fastify";
-import { createReadingSession } from "../services/session";
+import {
+  createReadingSession,
+  getReadingSessions,
+} from "../services/readingSession";
 import type { CreateReadingSessionRequest } from "../../types/session";
 
 export async function sessionRoutes(app: FastifyInstance) {
+  app.get("/api/books/reading-sessions", async () => {
+    return getReadingSessions();
+  });
+
   // Create a reading session and update the book's pagesRead
   app.post("/api/books/:id/reading-sessions", async (req, reply) => {
     const { id } = req.params as {

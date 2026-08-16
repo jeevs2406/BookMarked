@@ -61,3 +61,7 @@ export async function createReadingSession(
     };
   });
 }
+
+export async function getReadingSessions() {
+  return await db.select().from(readingSessions);
+}

@@ -28,6 +28,15 @@ interface LibraryBook {
   pagesRead: number;
 }
 
+interface ReadingSession {
+  id: number;
+  bookId: number;
+  previousPage: number;
+  newPage: number;
+  durationMinutes: number;
+  createdAt: string;
+}
+
 export function ReadingPlan() {
   const [planBooks, setPlanBooks] = useState<ReadingPlanBookResponse[]>([]);
   const [planEntries, setPlanEntries] = useState<ReadingPlanBookRequest[]>([]);
@@ -51,6 +60,7 @@ export function ReadingPlan() {
   const currentlyReading = planBooks.filter(
     (book) => book.status === "READING",
   );
+
   const plannedBooks = planBooks.filter(
     (book) => book.status === "WANT_TO_READ",
   );
@@ -61,8 +71,10 @@ export function ReadingPlan() {
 
   function estimateMinutesRemaining(book: ReadingPlanBookResponse): number {
     const pagesRemaining = Math.max((book.pageCount ?? 0) - book.pagesRead, 0);
+
     const pagesPerHour =
       actualMinPerDay > 0 ? actualMinPerDay : GENERAL_PACE_PAGES_PER_HOUR;
+
     return Math.ceil((pagesRemaining / pagesPerHour) * 60);
   }
 
@@ -70,19 +82,37 @@ export function ReadingPlan() {
     let cancelled = false;
 
     async function load() {
-      const [planRes, libraryRes] = await Promise.all([
+      const [planRes, libraryRes, sessionsRes] = await Promise.all([
         fetch(`${API_BASE}/api/reading-plan`),
         fetch(`${API_BASE}/api/books`),
+        fetch(`${API_BASE}/api/books/reading-sessions`),
       ]);
 
       const planData = await planRes.json();
       const libraryData = await libraryRes.json();
+      const sessionsData: ReadingSession[] = await sessionsRes.json();
 
       if (cancelled) return;
 
+      // Calculate personal reading average
+      const totalPagesRead = sessionsData.reduce((total, session) => {
+        const pagesRead = Math.max(session.newPage - session.previousPage, 0);
+
+        return total + pagesRead;
+      }, 0);
+
+      const totalMinutes = sessionsData.reduce((total, session) => {
+        return total + session.durationMinutes;
+      }, 0);
+
+      const personalPagesPerHour =
+        totalMinutes > 0 ? (totalPagesRead / totalMinutes) * 60 : 0;
+
+      setActualMinPerDay(personalPagesPerHour);
+
       if (planData) {
-        setActualMinPerDay(planData.actualMinPerDay ?? 0);
         setPlanBooks(planData.books);
+
         setPlanEntries(
           planData.books.map((b: ReadingPlanBookResponse) => ({
             bookId: b.bookId,
@@ -90,6 +120,7 @@ export function ReadingPlan() {
             deadline: b.deadline,
           })),
         );
+
         setHasCalculated(true);
       }
 
@@ -98,6 +129,7 @@ export function ReadingPlan() {
     }
 
     load();
+
     return () => {
       cancelled = true;
     };
@@ -108,7 +140,9 @@ export function ReadingPlan() {
 
     const res = await fetch(`${API_BASE}/api/reading-plan/calculate`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         orderMode: ORDER_MODE,
         targetMinPerDay,
@@ -125,12 +159,14 @@ export function ReadingPlan() {
     const data = await res.json();
 
     setPlanBooks(data.books);
+
     setCalculatedResults({
       totalPagesRemaining: data.totalPagesRemaining,
       totalReadingMinutes: data.totalReadingMinutes,
       requiredPagesPerDay: data.requiredPagesPerDay,
       status: data.status,
     });
+
     setHasCalculated(true);
   }
 
@@ -139,7 +175,9 @@ export function ReadingPlan() {
 
     await fetch(`${API_BASE}/api/reading-plan`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         orderMode: ORDER_MODE,
         targetMinPerDay,
@@ -160,20 +198,26 @@ export function ReadingPlan() {
         entry.bookId === bookId ? { ...entry, deadline } : entry,
       ),
     );
+
     setPlanBooks((books) =>
       books.map((book) =>
         book.bookId === bookId ? { ...book, deadline } : book,
       ),
     );
+
     invalidateCalculation();
   }
 
   function handleAddBook(bookId: number) {
     const book = libraryBooks.find((b) => b.id === bookId);
-    if (!book || planEntries.some((e) => e.bookId === book.id)) return;
+
+    if (!book || planEntries.some((e) => e.bookId === book.id)) {
+      return;
+    }
 
     const currentYear = new Date().getFullYear();
     const defaultDeadline = new Date(currentYear, 11, 31);
+
     const deadlineStr = defaultDeadline.toISOString().split("T")[0];
 
     setPlanEntries((entries) => [
@@ -233,6 +277,7 @@ export function ReadingPlan() {
           <label className="text-text-secondary text-sm">
             Target reading time per day (minutes)
           </label>
+
           <input
             type="number"
             min={1}
@@ -258,6 +303,7 @@ export function ReadingPlan() {
             <h2 className="font-serif text-text-primary text-xl">
               Currently Reading
             </h2>
+
             <span className="text-text-secondary text-sm">
               {currentlyReading.length}
             </span>
@@ -284,6 +330,7 @@ export function ReadingPlan() {
         <section className="mb-8">
           <div className="flex items-baseline gap-3 mb-2">
             <h2 className="font-serif text-text-primary text-xl">Up Next</h2>
+
             <span className="text-text-secondary text-sm">
               {plannedBooks.length}
             </span>

@@ -2,7 +2,7 @@ import "dotenv/config";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { bookRoutes } from "./routes/book";
-import { sessionRoutes } from "./routes/session";
+import { sessionRoutes } from "./routes/readingSession";
 import { readingPlanRoutes } from "./routes/readingPlan";
 import { testDatabaseConnection } from "./db/db.connect";
 
