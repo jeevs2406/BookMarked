@@ -3,7 +3,7 @@ import { books } from "../db/schema";
 import { readingSessions } from "../db/schema";
 import { eq } from "drizzle-orm";
 
-import type { CreateReadingSessionRequest } from "../../../types/sessions";
+import type { CreateReadingSessionRequest } from "../../../types/session";
 
 export async function createReadingSession(
   bookId: number,

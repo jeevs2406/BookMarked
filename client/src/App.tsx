@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { NavBar } from './components/NavBar';
-import { BrowseBooks } from './pages/BrowseBooks';
-import { Library } from './pages/Library';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { NavBar } from "./components/NavBar";
+import { BrowseBooks } from "./pages/BrowseBooks";
+import { Library } from "./pages/Library";
+import { ReadingPlan } from "./pages/ReadingPlan";
 
 function App() {
   return (
@@ -11,7 +12,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/library" replace />} />
           <Route path="/browse" element={<BrowseBooks />} />
-           <Route path="/library" element={<Library />} />
+          <Route path="/library" element={<Library />} />
+          <Route path="/plan" element={<ReadingPlan />} />
         </Routes>
       </div>
     </BrowserRouter>

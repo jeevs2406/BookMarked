@@ -169,7 +169,7 @@ export function Library() {
 
       pageCount: book.pageCount,
 
-      ratingsCount: book.ratingsCount,
+      ratingsCount: 0, //unrelated to this card rendering, so does not matter
     };
   }
 
