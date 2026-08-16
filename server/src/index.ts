@@ -4,13 +4,13 @@ import cors from '@fastify/cors';
 import { bookRoutes } from './routes/book';
 import { testDatabaseConnection } from './db/db.connect';
 
-
 const app = Fastify({ logger: false });
 
 async function start() {
   try {
     await app.register(cors, {
       origin: 'http://localhost:5173',
+      methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     });
 
     app.register(bookRoutes);
