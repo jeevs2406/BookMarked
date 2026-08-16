@@ -1,10 +1,10 @@
 import { db } from "../db/db.connect";
 import { eq } from "drizzle-orm";
 import { books } from "../db/schema";
-import type { BookStatus, AddBookRequest } from "../../../types/book";
+import type { BookStatus, AddBookRequest } from "../../types/book";
 
 export async function getLibraryBooks() {
-    console.log("library getter")
+  console.log("library getter");
   return await db.select().from(books);
 }
 
@@ -18,17 +18,14 @@ export async function addBookToLibrary(book: AddBookRequest) {
       genre: book.genre,
       coverUrl: book.coverUrl,
       pageCount: book.pageCount,
-      status: book.status
+      status: book.status,
     })
     .returning();
 
   return inserted;
 }
 
-export async function updateBookStatus(
-  bookId: number,
-  status: BookStatus
-) {
+export async function updateBookStatus(bookId: number, status: BookStatus) {
   const [updated] = await db
     .update(books)
     .set({ status })
@@ -39,7 +36,5 @@ export async function updateBookStatus(
 }
 
 export async function removeBookFromLibrary(bookId: number) {
-  await db
-    .delete(books)
-    .where(eq(books.id, bookId));
+  await db.delete(books).where(eq(books.id, bookId));
 }

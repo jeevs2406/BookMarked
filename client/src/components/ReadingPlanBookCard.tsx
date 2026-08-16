@@ -1,4 +1,4 @@
-import type { ReadingPlanBookResponse } from "../../../types/readingPlan";
+import type { ReadingPlanBookResponse } from "../../types/readingPlan";
 
 interface ReadingPlanBookCardProps {
   book: ReadingPlanBookResponse;

@@ -1,9 +1,6 @@
-import type { BookSearchResult } from "../../../types/book";
+import type { BookSearchResult } from "../../types/book";
 
-export async function searchBooks(
-  query: string
-): Promise<BookSearchResult[]> {
-
+export async function searchBooks(query: string): Promise<BookSearchResult[]> {
   console.log("This is called");
 
   const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
@@ -26,10 +23,7 @@ export async function searchBooks(
   }
 
   return data.items
-    .filter(
-      (item: any) =>
-        item.volumeInfo.imageLinks?.thumbnail
-    )
+    .filter((item: any) => item.volumeInfo.imageLinks?.thumbnail)
     .map((item: any) => ({
       googleBooksId: item.id,
       title: item.volumeInfo.title ?? "Untitled",
@@ -39,8 +33,5 @@ export async function searchBooks(
       pageCount: item.volumeInfo.pageCount ?? null,
       ratingsCount: item.volumeInfo.ratingsCount ?? 0,
     }))
-    .sort(
-      (a: any, b: any) =>
-        b.ratingsCount - a.ratingsCount
-    );
+    .sort((a: any, b: any) => b.ratingsCount - a.ratingsCount);
 }

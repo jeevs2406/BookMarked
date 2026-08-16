@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { createReadingSession } from "../services/session";
-import type { CreateReadingSessionRequest } from "../../../types/session";
+import type { CreateReadingSessionRequest } from "../../types/session";
 
 export async function sessionRoutes(app: FastifyInstance) {
   // Create a reading session and update the book's pagesRead

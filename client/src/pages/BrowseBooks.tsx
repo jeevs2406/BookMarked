@@ -1,38 +1,36 @@
-import { useState, useEffect } from 'react';
-import { BookCard } from '../components/BookCard';
+import { useState, useEffect } from "react";
+import { BookCard } from "../components/BookCard";
 import type {
   BookSearchResult,
   LibraryBook,
   BookStatus,
-} from '../../../types/book';
+} from "../../types/book";
 
 export function BrowseBooks() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState<BookSearchResult[]>([]);
   const [libraryBooks, setLibraryBooks] = useState<LibraryBook[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadLibrary();
-    runSearch('');
+    runSearch("");
   }, []);
 
   // Load all books currently in the user's library
   async function loadLibrary() {
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/books`
-      );
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/books`);
 
       if (!res.ok) {
-        throw new Error('Failed to fetch library');
+        throw new Error("Failed to fetch library");
       }
 
       const books: LibraryBook[] = await res.json();
 
       setLibraryBooks(books);
     } catch (error) {
-      console.error('Failed to load library:', error);
+      console.error("Failed to load library:", error);
     }
   }
 
@@ -42,18 +40,18 @@ export function BrowseBooks() {
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/books/search?q=${encodeURIComponent(searchQuery)}`
+        `${import.meta.env.VITE_API_URL}/api/books/search?q=${encodeURIComponent(searchQuery)}`,
       );
 
       if (!res.ok) {
-        throw new Error('Failed to search books');
+        throw new Error("Failed to search books");
       }
 
       const data: BookSearchResult[] = await res.json();
 
       setResults(data);
     } catch (error) {
-      console.error('Failed to search books:', error);
+      console.error("Failed to search books:", error);
       setResults([]);
     } finally {
       setLoading(false);
@@ -67,15 +65,13 @@ export function BrowseBooks() {
 
   async function handleStatusChange(
     book: BookSearchResult,
-    newStatus: BookStatus | null
+    newStatus: BookStatus | null,
   ) {
     try {
-
       // "Not in Library" → remove the book
       if (newStatus === null) {
         const existingBook = libraryBooks.find(
-          (libraryBook) =>
-            libraryBook.googleBooksId === book.googleBooksId
+          (libraryBook) => libraryBook.googleBooksId === book.googleBooksId,
         );
 
         if (!existingBook) {
@@ -85,18 +81,18 @@ export function BrowseBooks() {
         const res = await fetch(
           `${import.meta.env.VITE_API_URL}/api/books/${existingBook.id}`,
           {
-            method: 'DELETE',
-          }
+            method: "DELETE",
+          },
         );
 
         if (!res.ok) {
-          throw new Error('Failed to remove book');
+          throw new Error("Failed to remove book");
         }
 
         setLibraryBooks((previousBooks) =>
           previousBooks.filter(
-            (libraryBook) => libraryBook.id !== existingBook.id
-          )
+            (libraryBook) => libraryBook.id !== existingBook.id,
+          ),
         );
 
         return;
@@ -104,36 +100,29 @@ export function BrowseBooks() {
 
       // Check whether the book is already in the library
       const existingBook = libraryBooks.find(
-        (libraryBook) =>
-          libraryBook.googleBooksId === book.googleBooksId
+        (libraryBook) => libraryBook.googleBooksId === book.googleBooksId,
       );
 
       // Book isn't in library → add it
       if (!existingBook) {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/books`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              ...book,
-              status: newStatus,
-            }),
-          }
-        );
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/books`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...book,
+            status: newStatus,
+          }),
+        });
 
         if (!res.ok) {
-          throw new Error('Failed to add book');
+          throw new Error("Failed to add book");
         }
 
         const addedBook: LibraryBook = await res.json();
 
-        setLibraryBooks((previousBooks) => [
-          ...previousBooks,
-          addedBook,
-        ]);
+        setLibraryBooks((previousBooks) => [...previousBooks, addedBook]);
 
         return;
       }
@@ -142,46 +131,39 @@ export function BrowseBooks() {
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/books/${existingBook.id}/status`,
         {
-          method: 'PATCH',
+          method: "PATCH",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             status: newStatus,
           }),
-        }
+        },
       );
 
       if (!res.ok) {
-        throw new Error('Failed to update book status');
+        throw new Error("Failed to update book status");
       }
 
       const updatedBook: LibraryBook = await res.json();
 
       setLibraryBooks((previousBooks) =>
         previousBooks.map((libraryBook) =>
-          libraryBook.id === updatedBook.id
-            ? updatedBook
-            : libraryBook
-        )
+          libraryBook.id === updatedBook.id ? updatedBook : libraryBook,
+        ),
       );
-
     } catch (error) {
-      console.error('Failed to change book status:', error);
+      console.error("Failed to change book status:", error);
     }
   }
 
   return (
     <div className="p-8">
-
       <h1 className="font-serif text-text-primary text-2xl mb-6">
         Browse Books
       </h1>
 
-      <form
-        onSubmit={handleSearch}
-        className="mb-6 flex gap-2"
-      >
+      <form onSubmit={handleSearch} className="mb-6 flex gap-2">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -197,25 +179,16 @@ export function BrowseBooks() {
         </button>
       </form>
 
-      {loading && (
-        <p className="text-text-secondary mb-4">
-          Searching...
-        </p>
-      )}
+      {loading && <p className="text-text-secondary mb-4">Searching...</p>}
 
       {!loading && results.length === 0 && (
-        <p className="text-text-secondary">
-          No books found.
-        </p>
+        <p className="text-text-secondary">No books found.</p>
       )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-
         {results.map((book) => {
-
           const libraryBook = libraryBooks.find(
-            (libraryBook) =>
-              libraryBook.googleBooksId === book.googleBooksId
+            (libraryBook) => libraryBook.googleBooksId === book.googleBooksId,
           );
 
           return (
@@ -227,9 +200,7 @@ export function BrowseBooks() {
             />
           );
         })}
-
       </div>
-
     </div>
   );
 }

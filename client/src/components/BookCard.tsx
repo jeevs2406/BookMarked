@@ -1,4 +1,4 @@
-import type { BookSearchResult, BookStatus } from "../../../types/book";
+import type { BookSearchResult, BookStatus } from "../../types/book";
 
 interface BookCardProps {
   book: BookSearchResult;

@@ -1,7 +1,7 @@
 import { db } from "../db/db.connect";
 import { readingPlans, readingPlanBooks, books } from "../db/schema";
 import { eq, asc, ne } from "drizzle-orm";
-import type { BookStatus } from "../../../types/book";
+import type { BookStatus } from "../../types/book";
 
 import type {
   //   ReadingPlanBookRequest,
@@ -11,7 +11,7 @@ import type {
   //   ReadingPlanResponse,
   ReadingPlanBookResponse,
   ReadingPlanStatus,
-} from "../../../types/readingPlan";
+} from "../../types/readingPlan";
 
 /*
 |--------------------------------------------------------------------------

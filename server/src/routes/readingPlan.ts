@@ -10,7 +10,7 @@ import {
 import type {
   CalculateReadingPlanRequest,
   SaveReadingPlanRequest,
-} from "../../../types/readingPlan";
+} from "../../types/readingPlan";
 
 export async function readingPlanRoutes(app: FastifyInstance) {
   // Get the user's saved reading plan

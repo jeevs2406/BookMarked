@@ -7,7 +7,7 @@ import type {
   BookSearchResult,
   LibraryBook,
   BookStatus,
-} from "../../../types/book";
+} from "../../types/book";
 
 export function Library() {
   const [books, setBooks] = useState<LibraryBook[]>([]);

@@ -4,7 +4,7 @@ import type {
   ReadingPlanBookResponse,
   ReadingPlanStatus,
   ReadingPlanBookRequest,
-} from "../../../types/readingPlan";
+} from "../../types/readingPlan";
 
 import { ReadingPlanBookCard } from "../components/ReadingPlanBookCard";
 import { ReadingStats } from "../components/ReadingStats";
