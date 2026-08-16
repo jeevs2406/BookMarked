@@ -19,7 +19,7 @@ export function ReadingStats({
       <div className="bg-bg-secondary rounded-lg p-5">
         <p className="text-text-secondary text-sm">Your reading pace</p>
         <p className="text-text-primary text-2xl font-semibold mt-2">
-          {personalAverage} min/day
+          {personalAverage * 2} pages/hour
         </p>
       </div>
     </div>
