@@ -4,7 +4,7 @@ import type { LibraryBook } from "../../../types/book";
 interface LogProgressModalProps {
   book: LibraryBook;
   onClose: () => void;
-  onSaved: (book: LibraryBook) => void;
+  onSaved: (newPage: number, durationMinutes: number) => Promise<void>;
 }
 
 export function LogProgressModal({
@@ -12,28 +12,36 @@ export function LogProgressModal({
   onClose,
   onSaved,
 }: LogProgressModalProps) {
-  const [pagesRead, setPagesRead] = useState(String(book.pagesRead ?? 0));
-
-  const [hours, setHours] = useState("");
-  const [minutes, setMinutes] = useState("");
-
+  const [newPage, setNewPage] = useState(String(book.pagesRead));
+  const [hours, setHours] = useState(0);
+  const [minutes, setMinutes] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSave() {
-    const newPagesRead = Number(pagesRead);
-    const hoursValue = Number(hours || 0);
-    const minutesValue = Number(minutes || 0);
+    setError("");
 
-    // Basic validation
-    if (Number.isNaN(newPagesRead) || newPagesRead < 0) {
+    const page = Number(newPage);
+
+    if (newPage === "") {
+      setError("Please enter a page number.");
       return;
     }
 
-    if (book.pageCount !== null && newPagesRead > book.pageCount) {
+    if (page < book.pagesRead + 1) {
+      setError(`New page must be at least ${book.pagesRead + 1}.`);
       return;
     }
 
-    if (hoursValue < 0 || minutesValue < 0 || minutesValue > 59) {
+    const durationMinutes = hours * 60 + minutes;
+
+    if (durationMinutes <= 0) {
+      setError("Please enter how long you spent reading.");
+      return;
+    }
+
+    if (book.pageCount !== null && page > book.pageCount) {
+      setError(`Page cannot be greater than ${book.pageCount}.`);
       return;
     }
 
@@ -41,120 +49,121 @@ export function LogProgressModal({
 
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/books/${book.id}/progress`,
+        `${import.meta.env.VITE_API_URL}/api/books/${book.id}/reading-sessions`,
         {
-          method: "PATCH",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            pagesRead: newPagesRead,
-            hours: hoursValue,
-            minutes: minutesValue,
+            newPage: page,
+            durationMinutes,
           }),
         },
       );
 
+      const data = await res.json();
+
       if (!res.ok) {
-        throw new Error("Failed to save progress");
+        throw new Error(data.error || "Failed to save reading progress.");
       }
 
-      const updatedBook: LibraryBook = await res.json();
+      // Backend returns the updated book
+      try {
+        await onSaved(page, durationMinutes);
+      } catch (error) {
+        console.error("Failed to save progress:", error);
+      }
 
-      onSaved(updatedBook);
       onClose();
     } catch (error) {
-      console.error("Failed to save reading progress:", error);
+      console.error("Failed to save progress:", error);
+
+      setError(
+        error instanceof Error ? error.message : "Failed to save progress.",
+      );
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-    >
-      {/* Modal */}
-      <div
-        className="bg-bg-secondary rounded-lg shadow-xl w-full max-w-md p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="mb-6">
-          <h2 className="font-serif text-text-primary text-xl">
-            Log Reading Progress
-          </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="bg-bg-secondary rounded-lg p-6 w-full max-w-md shadow-xl">
+        <h2 className="font-serif text-text-primary text-xl">
+          Log Reading Progress
+        </h2>
 
-          <p className="text-text-secondary text-sm mt-1">{book.title}</p>
-        </div>
+        <p className="text-text-secondary text-sm mt-1">{book.title}</p>
 
         {/* Current page */}
-        <div className="mb-5">
+        <div className="mt-6">
           <label className="block text-text-primary text-sm mb-2">
             Current page
           </label>
 
+          <p className="text-text-secondary text-xs mb-2">
+            Last recorded page: {book.pagesRead}
+          </p>
+
           <input
             type="number"
-            min="0"
+            min={book.pagesRead}
             max={book.pageCount ?? undefined}
-            value={pagesRead}
-            onChange={(e) => setPagesRead(e.target.value)}
+            value={newPage}
+            onChange={(e) => setNewPage(e.target.value)}
             className="w-full bg-bg-elevated text-text-primary rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-accent-terracotta"
           />
-
-          <p className="text-text-secondary text-xs mt-1">
-            Last recorded page: {book.pagesRead ?? 0}
-            {book.pageCount !== null && ` / ${book.pageCount}`}
-          </p>
         </div>
 
-        {/* Time spent */}
-        <div className="mb-6">
+        {/* Time */}
+        <div className="mt-5">
           <label className="block text-text-primary text-sm mb-2">
-            Time spent reading
+            Reading time
           </label>
 
           <div className="flex gap-3">
-            {/* Hours */}
             <div className="flex-1">
+              <label className="block text-text-secondary text-xs mb-1">
+                Hours
+              </label>
+
               <input
                 type="number"
                 min="0"
                 value={hours}
-                onChange={(e) => setHours(e.target.value)}
-                placeholder="0"
+                onChange={(e) => setHours(Number(e.target.value))}
                 className="w-full bg-bg-elevated text-text-primary rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-accent-terracotta"
               />
-
-              <p className="text-text-secondary text-xs mt-1">hours</p>
             </div>
 
-            {/* Minutes */}
             <div className="flex-1">
+              <label className="block text-text-secondary text-xs mb-1">
+                Minutes
+              </label>
+
               <input
                 type="number"
                 min="0"
                 max="59"
                 value={minutes}
-                onChange={(e) => setMinutes(e.target.value)}
-                placeholder="0"
+                onChange={(e) => setMinutes(Number(e.target.value))}
                 className="w-full bg-bg-elevated text-text-primary rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-accent-terracotta"
               />
-
-              <p className="text-text-secondary text-xs mt-1">minutes</p>
             </div>
           </div>
         </div>
 
+        {/* Error */}
+        {error && <p className="text-red-400 text-sm mt-4">{error}</p>}
+
         {/* Buttons */}
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end gap-3 mt-6">
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="px-4 py-2 rounded-md text-sm text-text-secondary hover:bg-bg-elevated transition-colors"
+            className="px-4 py-2 rounded-md text-sm text-text-secondary hover:bg-bg-elevated"
           >
             Cancel
           </button>
@@ -163,7 +172,7 @@ export function LogProgressModal({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-4 py-2 rounded-md bg-accent-moss text-bg-primary text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="px-4 py-2 rounded-md bg-accent-terracotta text-bg-primary text-sm"
           >
             {saving ? "Saving..." : "Save Progress"}
           </button>

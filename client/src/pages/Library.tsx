@@ -180,21 +180,47 @@ export function Library() {
     setProgressBook(book);
   }
 
-  /*
-   * Called after progress has successfully
-   * been saved.
-   */
-  function handleProgressSaved(updatedBook: LibraryBook) {
-    setBooks((previousBooks) =>
-      previousBooks.map((book) =>
-        book.id === updatedBook.id ? updatedBook : book,
-      ),
-    );
+  async function handleProgressSaved(newPage: number, durationMinutes: number) {
+    if (!progressBook) {
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/books/${progressBook.id}/reading-sessions`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            newPage,
+            durationMinutes,
+          }),
+        },
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+
+        throw new Error(errorData.error || "Failed to save reading progress");
+      }
+
+      const data = await res.json();
+
+      setBooks((previousBooks) =>
+        previousBooks.map((existingBook) =>
+          existingBook.id === data.book.id ? data.book : existingBook,
+        ),
+      );
+
+      setProgressBook(null);
+    } catch (error) {
+      console.error("Failed to save progress:", error);
+      throw error;
+    }
   }
 
-  /*
-   * Loading state
-   */
   if (loading) {
     return (
       <div className="p-8">
@@ -203,15 +229,11 @@ export function Library() {
     );
   }
 
-  /*
-   * Divide books by status
-   */
   const currentlyReading = books.filter((book) => book.status === "READING");
 
   const wantToRead = books.filter((book) => book.status === "WANT_TO_READ");
 
   const completed = books.filter((book) => book.status === "COMPLETED");
-
   /*
    * Render one section
    */

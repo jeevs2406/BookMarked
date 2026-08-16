@@ -4,12 +4,11 @@ import {
   getLibraryBooks,
   addBookToLibrary,
   updateBookStatus,
-  removeBookFromLibrary
+  removeBookFromLibrary,
 } from "../services/bookLibrary";
 import type { AddBookRequest, BookStatus } from "../../../types/book";
 
 export async function bookRoutes(app: FastifyInstance) {
-
   // Search Google Books
   app.get("/api/books/search", async (req) => {
     const { q } = req.query as { q?: string };
@@ -19,12 +18,10 @@ export async function bookRoutes(app: FastifyInstance) {
     return results;
   });
 
-
   // Get all books in the user's library
   app.get("/api/books", async () => {
     return getLibraryBooks();
   });
-
 
   // Add a book to the user's library
   app.post("/api/books", async (req) => {
@@ -45,7 +42,6 @@ export async function bookRoutes(app: FastifyInstance) {
 
     return updateBookStatus(Number(id), status);
   });
-
 
   // Remove book from library
   app.delete("/api/books/:id", async (req) => {

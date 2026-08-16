@@ -1,7 +1,4 @@
-export type BookStatus =
-  | 'WANT_TO_READ'
-  | 'READING'
-  | 'COMPLETED';
+export type BookStatus = "WANT_TO_READ" | "READING" | "COMPLETED";
 
 export interface BookSearchResult {
   googleBooksId: string;
@@ -10,7 +7,7 @@ export interface BookSearchResult {
   genre: string | null;
   coverUrl: string | null;
   pageCount: number | null;
-  ratingsCount: number| null
+  ratingsCount: number | null;
 }
 
 export interface AddBookRequest extends BookSearchResult {
@@ -22,4 +19,3 @@ export interface LibraryBook extends BookSearchResult {
   pagesRead: number;
   status: BookStatus;
 }
-
