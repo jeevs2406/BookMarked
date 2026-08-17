@@ -11,6 +11,7 @@ import { ReadingStats } from "../components/ReadingStats";
 import { PlanControls } from "../components/PlanControls";
 import { PlanSummary } from "../components/PlanSummary";
 import { AddBooksModal } from "../components/AddBooksModal";
+import { MessageModal } from "../components/MessageModal";
 
 const API_BASE = import.meta.env.VITE_API_URL;
 const GENERAL_PACE_PAGES_PER_HOUR = 60;
@@ -37,12 +38,17 @@ interface ReadingSession {
   createdAt: string;
 }
 
+interface FeedbackModal {
+  type: "error" | "success";
+  message: string;
+}
+
 export function ReadingPlan() {
   const [planBooks, setPlanBooks] = useState<ReadingPlanBookResponse[]>([]);
   const [planEntries, setPlanEntries] = useState<ReadingPlanBookRequest[]>([]);
 
-  const [targetMinPerDay, setTargetMinPerDay] = useState(60);
-  const [actualMinPerDay, setActualMinPerDay] = useState(0);
+  const [targetMinPerDay, setTargetMinPerDay] = useState("0");
+  const [personalPagesPerHour, setPersonalPagesPerHour] = useState(0);
 
   const [hasCalculated, setHasCalculated] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -57,6 +63,10 @@ export function ReadingPlan() {
   const [libraryBooks, setLibraryBooks] = useState<LibraryBook[]>([]);
   const [showAddBooks, setShowAddBooks] = useState(false);
 
+  const [feedbackModal, setFeedbackModal] = useState<FeedbackModal | null>(
+    null,
+  );
+
   const currentlyReading = planBooks.filter(
     (book) => book.status === "READING",
   );
@@ -69,11 +79,19 @@ export function ReadingPlan() {
     setHasCalculated(false);
   }
 
+  function handleRemoveBook(bookId: number) {
+    setPlanBooks((books) => books.filter((b) => b.bookId !== bookId));
+    setPlanEntries((entries) => entries.filter((e) => e.bookId !== bookId));
+    invalidateCalculation();
+  }
+
   function estimateMinutesRemaining(book: ReadingPlanBookResponse): number {
     const pagesRemaining = Math.max((book.pageCount ?? 0) - book.pagesRead, 0);
 
     const pagesPerHour =
-      actualMinPerDay > 0 ? actualMinPerDay : GENERAL_PACE_PAGES_PER_HOUR;
+      personalPagesPerHour > 0
+        ? personalPagesPerHour
+        : GENERAL_PACE_PAGES_PER_HOUR;
 
     return Math.ceil((pagesRemaining / pagesPerHour) * 60);
   }
@@ -94,10 +112,8 @@ export function ReadingPlan() {
 
       if (cancelled) return;
 
-      // Calculate personal reading average
       const totalPagesRead = sessionsData.reduce((total, session) => {
         const pagesRead = Math.max(session.newPage - session.previousPage, 0);
-
         return total + pagesRead;
       }, 0);
 
@@ -105,23 +121,65 @@ export function ReadingPlan() {
         return total + session.durationMinutes;
       }, 0);
 
-      const personalPagesPerHour =
+      const pagesPerHour =
         totalMinutes > 0 ? (totalPagesRead / totalMinutes) * 60 : 0;
 
-      setActualMinPerDay(personalPagesPerHour);
+      setPersonalPagesPerHour(pagesPerHour);
 
       if (planData) {
-        setPlanBooks(planData.books);
+        const savedTargetMinPerDay = planData.targetMinPerDay;
 
-        setPlanEntries(
-          planData.books.map((b: ReadingPlanBookResponse) => ({
-            bookId: b.bookId,
-            readingOrder: b.readingOrder,
-            deadline: b.deadline,
-          })),
-        );
+        setTargetMinPerDay(String(savedTargetMinPerDay));
 
-        setHasCalculated(true);
+        const entries = planData.books.map((b: ReadingPlanBookResponse) => ({
+          bookId: b.bookId,
+          readingOrder: b.readingOrder,
+          deadline: b.deadline,
+        }));
+
+        setPlanEntries(entries);
+
+        if (entries.length > 0 && savedTargetMinPerDay > 0) {
+          const calcRes = await fetch(
+            `${API_BASE}/api/reading-plan/calculate`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                orderMode: ORDER_MODE,
+                targetMinPerDay: savedTargetMinPerDay,
+                personalPagesPerHour:
+                  pagesPerHour > 0 ? pagesPerHour : GENERAL_PACE_PAGES_PER_HOUR,
+                books: entries,
+              }),
+            },
+          );
+
+          if (calcRes.ok) {
+            const calcData = await calcRes.json();
+
+            if (!cancelled) {
+              setPlanBooks(calcData.books);
+
+              setCalculatedResults({
+                totalPagesRemaining: calcData.totalPagesRemaining,
+                totalReadingMinutes: calcData.totalReadingMinutes,
+                requiredPagesPerDay: calcData.requiredPagesPerDay,
+                status: calcData.status,
+              });
+
+              setHasCalculated(true);
+            }
+          } else {
+            setPlanBooks(planData.books);
+            setHasCalculated(true);
+          }
+        } else {
+          setPlanBooks(planData.books);
+          setHasCalculated(true);
+        }
       }
 
       setLibraryBooks(libraryData);
@@ -136,7 +194,24 @@ export function ReadingPlan() {
   }, []);
 
   async function handleCalculate() {
-    if (planEntries.length === 0) return;
+    if (currentlyReading.length + plannedBooks.length === 0) {
+      setFeedbackModal({
+        type: "error",
+        message: "Add at least one book to your plan before calculating.",
+      });
+      return;
+    }
+
+    const targetMinPerDayNum =
+      targetMinPerDay === "" ? 0 : Number(targetMinPerDay);
+
+    if (!targetMinPerDayNum || targetMinPerDayNum <= 0) {
+      setFeedbackModal({
+        type: "error",
+        message: "Enter a target reading time greater than 0 minutes.",
+      });
+      return;
+    }
 
     const res = await fetch(`${API_BASE}/api/reading-plan/calculate`, {
       method: "POST",
@@ -144,15 +219,19 @@ export function ReadingPlan() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        personalPagesPerHour,
         orderMode: ORDER_MODE,
-        targetMinPerDay,
+        targetMinPerDay: targetMinPerDayNum,
         books: planEntries,
       }),
     });
 
     if (!res.ok) {
       const err = await res.json();
-      console.error("Calculation failed:", err);
+      setFeedbackModal({
+        type: "error",
+        message: err.error || "Failed to calculate your reading plan.",
+      });
       return;
     }
 
@@ -171,25 +250,59 @@ export function ReadingPlan() {
   }
 
   async function handleSavePlan() {
+    if (currentlyReading.length + plannedBooks.length === 0) {
+      setFeedbackModal({
+        type: "error",
+        message: "Add at least one book to your plan before saving.",
+      });
+      return;
+    }
+
     if (!hasCalculated) return;
 
-    await fetch(`${API_BASE}/api/reading-plan`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        orderMode: ORDER_MODE,
-        targetMinPerDay,
-        requiredPagesPerDay: calculatedResults.requiredPagesPerDay,
-        totalPagesRemaining: calculatedResults.totalPagesRemaining,
-        totalReadingMinutes: calculatedResults.totalReadingMinutes,
-        pagesRead: planBooks.reduce((total, b) => total + b.pagesRead, 0),
-        overallCompletionDate: planBooks.at(-1)?.estimatedFinishDate ?? "",
-        status: calculatedResults.status,
-        books: planBooks,
-      }),
-    });
+    const targetMinPerDayNum =
+      targetMinPerDay === "" ? 0 : Number(targetMinPerDay);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/reading-plan`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderMode: ORDER_MODE,
+          targetMinPerDay: targetMinPerDayNum,
+          requiredPagesPerDay: calculatedResults.requiredPagesPerDay,
+          totalPagesRemaining: calculatedResults.totalPagesRemaining,
+          totalReadingMinutes: calculatedResults.totalReadingMinutes,
+          pagesRead: planBooks.reduce((total, b) => total + b.pagesRead, 0),
+          overallCompletionDate: planBooks.at(-1)?.estimatedFinishDate ?? "",
+          status: calculatedResults.status,
+          books: planBooks,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        setFeedbackModal({
+          type: "error",
+          message: err.error || "Failed to save your reading plan.",
+        });
+        return;
+      }
+
+      await res.json();
+
+      setFeedbackModal({
+        type: "success",
+        message: "Your reading plan has been saved.",
+      });
+    } catch {
+      setFeedbackModal({
+        type: "error",
+        message: "Failed to save your reading plan. Please try again.",
+      });
+    }
   }
 
   function handleDeadlineChange(bookId: number, deadline: string) {
@@ -268,7 +381,7 @@ export function ReadingPlan() {
     <div className="p-8 max-w-6xl mx-auto">
       <ReadingStats
         overallAverage={GENERAL_PACE_PAGES_PER_HOUR}
-        personalAverage={actualMinPerDay}
+        personalAverage={personalPagesPerHour}
       />
 
       <section>
@@ -284,7 +397,7 @@ export function ReadingPlan() {
             min={1}
             value={targetMinPerDay}
             onChange={(e) => {
-              setTargetMinPerDay(Number(e.target.value));
+              setTargetMinPerDay(e.target.value);
               invalidateCalculation();
             }}
             className="bg-bg-secondary text-text-primary rounded-md px-3 py-1 w-24 outline-none focus:ring-2 focus:ring-accent-terracotta"
@@ -322,6 +435,7 @@ export function ReadingPlan() {
                   book={book}
                   estimatedMinutes={estimateMinutesRemaining(book)}
                   onDeadlineChange={handleDeadlineChange}
+                  onRemove={handleRemoveBook}
                 />
               ))}
             </div>
@@ -355,6 +469,7 @@ export function ReadingPlan() {
                   order={index + 1}
                   estimatedMinutes={estimateMinutesRemaining(book)}
                   onDeadlineChange={handleDeadlineChange}
+                  onRemove={handleRemoveBook}
                 />
               ))}
             </div>
@@ -388,6 +503,14 @@ export function ReadingPlan() {
           books={booksNotInPlan}
           onAdd={handleAddBook}
           onClose={() => setShowAddBooks(false)}
+        />
+      )}
+
+      {feedbackModal && (
+        <MessageModal
+          type={feedbackModal.type}
+          message={feedbackModal.message}
+          onClose={() => setFeedbackModal(null)}
         />
       )}
     </div>
