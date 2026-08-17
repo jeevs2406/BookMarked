@@ -13,8 +13,8 @@ export function LogProgressModal({
   onSaved,
 }: LogProgressModalProps) {
   const [newPage, setNewPage] = useState(String(book.pagesRead));
-  const [hours, setHours] = useState(0);
-  const [minutes, setMinutes] = useState(0);
+  const [hours, setHours] = useState("0");
+  const [minutes, setMinutes] = useState("0");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const isSavingRef = useRef(false);
@@ -39,7 +39,10 @@ export function LogProgressModal({
       return;
     }
 
-    const durationMinutes = hours * 60 + minutes;
+    const hoursNum = hours === "" ? 0 : Number(hours);
+    const minutesNum = minutes === "" ? 0 : Number(minutes);
+
+    const durationMinutes = hoursNum * 60 + minutesNum;
 
     if (durationMinutes <= 0) {
       setError("Please enter how long you spent reading.");
@@ -79,15 +82,6 @@ export function LogProgressModal({
       await onSaved(data.book);
 
       onClose();
-
-      // // Backend returns the updated book
-      // try {
-      //   await onSaved(page, durationMinutes);
-      // } catch (error) {
-      //   console.error("Failed to save progress:", error);
-      // }
-
-      // onClose();
     } catch (error) {
       console.error("Failed to save progress:", error);
 
@@ -145,7 +139,7 @@ export function LogProgressModal({
                 type="number"
                 min="0"
                 value={hours}
-                onChange={(e) => setHours(Number(e.target.value))}
+                onChange={(e) => setHours(e.target.value)}
                 className="w-full bg-bg-elevated text-text-primary rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-accent-terracotta"
               />
             </div>
@@ -160,7 +154,7 @@ export function LogProgressModal({
                 min="0"
                 max="59"
                 value={minutes}
-                onChange={(e) => setMinutes(Number(e.target.value))}
+                onChange={(e) => setMinutes(e.target.value)}
                 className="w-full bg-bg-elevated text-text-primary rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-accent-terracotta"
               />
             </div>

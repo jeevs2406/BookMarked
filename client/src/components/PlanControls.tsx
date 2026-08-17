@@ -11,7 +11,7 @@ export function PlanControls({
 }: PlanControlsProps) {
   return (
     <section className="bg-bg-secondary rounded-lg p-6 mt-8">
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-between gap-3">
         <button
           type="button"
           onClick={onCalculate}
