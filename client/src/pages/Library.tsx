@@ -180,47 +180,15 @@ export function Library() {
     setProgressBook(book);
   }
 
-  async function handleProgressSaved(newPage: number, durationMinutes: number) {
-    if (!progressBook) {
-      return;
-    }
+  async function handleProgressSaved(updatedBook: LibraryBook) {
+    setBooks((previousBooks) =>
+      previousBooks.map((existingBook) =>
+        existingBook.id === updatedBook.id ? updatedBook : existingBook,
+      ),
+    );
 
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/books/${progressBook.id}/reading-sessions`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            newPage,
-            durationMinutes,
-          }),
-        },
-      );
-
-      if (!res.ok) {
-        const errorData = await res.json();
-
-        throw new Error(errorData.error || "Failed to save reading progress");
-      }
-
-      const data = await res.json();
-
-      setBooks((previousBooks) =>
-        previousBooks.map((existingBook) =>
-          existingBook.id === data.book.id ? data.book : existingBook,
-        ),
-      );
-
-      setProgressBook(null);
-    } catch (error) {
-      console.error("Failed to save progress:", error);
-      throw error;
-    }
+    setProgressBook(null);
   }
-
   if (loading) {
     return (
       <div className="p-8">

@@ -4,7 +4,7 @@ const navItems = [
   { to: "/library", label: "My Library" },
   { to: "/browse", label: "Browse" },
   { to: "/plan", label: "Reading Plan" },
-  { to: "/journal", label: "Journal" },
+  //{ to: "/journal", label: "Journal" }, future feature!
 ];
 
 export function NavBar() {

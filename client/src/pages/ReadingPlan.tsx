@@ -260,7 +260,8 @@ export function ReadingPlan() {
   }
 
   const booksNotInPlan = libraryBooks.filter(
-    (b) => !planEntries.some((e) => e.bookId === b.id),
+    (b) =>
+      b.status !== "COMPLETED" && !planEntries.some((e) => e.bookId === b.id),
   );
 
   return (

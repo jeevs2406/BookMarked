@@ -12,6 +12,7 @@ export async function sessionRoutes(app: FastifyInstance) {
 
   // Create a reading session and update the book's pagesRead
   app.post("/api/books/:id/reading-sessions", async (req, reply) => {
+    console.log("Calling the getter");
     const { id } = req.params as {
       id: string;
     };

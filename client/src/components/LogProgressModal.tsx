@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { LibraryBook } from "../../types/book";
 
 interface LogProgressModalProps {
   book: LibraryBook;
   onClose: () => void;
-  onSaved: (newPage: number, durationMinutes: number) => Promise<void>;
+  onSaved: (updatedBook: LibraryBook) => Promise<void>;
 }
 
 export function LogProgressModal({
@@ -17,19 +17,25 @@ export function LogProgressModal({
   const [minutes, setMinutes] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const isSavingRef = useRef(false);
 
   async function handleSave() {
+    if (isSavingRef.current) return;
+    isSavingRef.current = true;
+
     setError("");
 
     const page = Number(newPage);
 
     if (newPage === "") {
       setError("Please enter a page number.");
+      isSavingRef.current = false;
       return;
     }
 
     if (page < book.pagesRead + 1) {
       setError(`New page must be at least ${book.pagesRead + 1}.`);
+      isSavingRef.current = false;
       return;
     }
 
@@ -37,11 +43,13 @@ export function LogProgressModal({
 
     if (durationMinutes <= 0) {
       setError("Please enter how long you spent reading.");
+      isSavingRef.current = false;
       return;
     }
 
     if (book.pageCount !== null && page > book.pageCount) {
       setError(`Page cannot be greater than ${book.pageCount}.`);
+      isSavingRef.current = false;
       return;
     }
 
@@ -68,14 +76,18 @@ export function LogProgressModal({
         throw new Error(data.error || "Failed to save reading progress.");
       }
 
-      // Backend returns the updated book
-      try {
-        await onSaved(page, durationMinutes);
-      } catch (error) {
-        console.error("Failed to save progress:", error);
-      }
+      await onSaved(data.book);
 
       onClose();
+
+      // // Backend returns the updated book
+      // try {
+      //   await onSaved(page, durationMinutes);
+      // } catch (error) {
+      //   console.error("Failed to save progress:", error);
+      // }
+
+      // onClose();
     } catch (error) {
       console.error("Failed to save progress:", error);
 
@@ -84,6 +96,7 @@ export function LogProgressModal({
       );
     } finally {
       setSaving(false);
+      isSavingRef.current = false;
     }
   }
 
