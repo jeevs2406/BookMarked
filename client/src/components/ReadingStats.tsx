@@ -1,3 +1,7 @@
+/**
+ * Component that displays the reading stats at the top of the reading plan page
+ */
+
 interface ReadingStatsProps {
   overallAverage: number;
   personalAverage: number;
@@ -19,7 +23,7 @@ export function ReadingStats({
       <div className="bg-bg-secondary rounded-lg p-5">
         <p className="text-text-secondary text-sm">Your reading pace</p>
         <p className="text-text-primary text-2xl font-semibold mt-2">
-          {personalAverage} pages/hour
+          {personalAverage.toFixed(2)} pages/hour
         </p>
       </div>
     </div>
