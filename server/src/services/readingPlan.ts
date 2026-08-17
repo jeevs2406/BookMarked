@@ -4,11 +4,9 @@ import { eq, asc, ne } from "drizzle-orm";
 import type { BookStatus } from "../types/book";
 
 import type {
-  //   ReadingPlanBookRequest,
   CalculateReadingPlanRequest,
   CalculateReadingPlanResponse,
   SaveReadingPlanRequest,
-  //   ReadingPlanResponse,
   ReadingPlanBookResponse,
   ReadingPlanStatus,
 } from "../types/readingPlan";
@@ -23,11 +21,9 @@ import type {
 */
 
 export async function getReadingPlan() {
-  console.log("reaches reading plan");
   const plan = await db.select().from(readingPlans).limit(1);
 
   if (plan.length === 0) {
-    console.log("returns null?");
     return null;
   }
 
@@ -100,9 +96,6 @@ export async function saveReadingPlan(input: SaveReadingPlanRequest) {
 
   const existingPlan = await db.select().from(readingPlans).limit(1);
 
-  console.log("existing plan");
-  console.log(existingPlan);
-
   let planId: number;
 
   const planFields = {
@@ -115,8 +108,6 @@ export async function saveReadingPlan(input: SaveReadingPlanRequest) {
     overallCompletionDate: input.overallCompletionDate,
     status: input.status,
   };
-
-  console.log(planFields);
 
   /*
    * Create a plan if one doesn't exist.
@@ -214,6 +205,8 @@ export async function deleteReadingPlan() {
 export async function calculateReadingPlan(
   input: CalculateReadingPlanRequest,
 ): Promise<CalculateReadingPlanResponse> {
+  console.log("Calculate input");
+  console.log(input);
   /*
    * Every book must have a deadline.
    */
@@ -326,22 +319,22 @@ export async function calculateReadingPlan(
   const requiredPagesPerDay = Math.ceil(maxRequiredPace);
 
   /*
-   * Average reading speed.
+   * Utilizes the personalPagesPerHour data sent from frontend to get
+   * values for calculation
    *
-   * For now this is a placeholder.
-   *
-   * Later we can calculate the user's personal
-   * pages-per-hour from reading_sessions.
-   *
-   * 42 pages/hour is only a temporary value.
+   * 60 is standardised as the general page per hour rate according to
+   * WordsRated
    */
 
-  const pagesPerHour = 42;
+  const pagesPerHour =
+    input.personalPagesPerHour && input.personalPagesPerHour > 0
+      ? input.personalPagesPerHour
+      : 60; // fallback for users with no logged sessions yet
   const minutesPerPage = 60 / pagesPerHour;
 
   /*
    * Time required to finish each book, in minutes, at the
-   * placeholder reading speed. This is the real per-book
+   * reading speed of the user. This is the real per-book
    * workload the schedule has to fit — everything below is
    * built on this, not on total-pages-divided-by-days.
    */

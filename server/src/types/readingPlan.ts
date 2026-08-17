@@ -37,6 +37,7 @@ export interface ReadingPlanBookResponse {
 
 // Calculation sections does not save in database, just to determine feasability
 export interface CalculateReadingPlanRequest {
+  personalPagesPerHour: number;
   orderMode: ReadingPlanOrderMode;
   books: ReadingPlanBookRequest[];
   targetMinPerDay: number;
