@@ -5,6 +5,7 @@ interface ReadingPlanBookCardProps {
   estimatedMinutes: number;
   order?: number;
   onDeadlineChange: (bookId: number, deadline: string) => void;
+  onRemove: (bookId: number) => void;
 }
 
 export function ReadingPlanBookCard({
@@ -12,6 +13,7 @@ export function ReadingPlanBookCard({
   order,
   estimatedMinutes,
   onDeadlineChange,
+  onRemove,
 }: ReadingPlanBookCardProps) {
   const pagesRemaining =
     book.pageCount !== null ? book.pageCount - book.pagesRead : null;
@@ -22,7 +24,16 @@ export function ReadingPlanBookCard({
       : 0;
 
   return (
-    <div className="bg-bg-secondary rounded-lg p-5">
+    <div className="bg-bg-secondary rounded-lg p-5 relative">
+      <button
+        type="button"
+        onClick={() => onRemove(book.bookId)}
+        aria-label="Remove book from plan"
+        className="absolute top-3 right-3 w-6 h-6 flex items-center justify-center rounded-full text-text-secondary hover:bg-bg-elevated hover:text-text-primary transition-colors"
+      >
+        ✕
+      </button>
+
       <div className="flex gap-5">
         <div className="w-20 h-28 flex-shrink-0 bg-bg-elevated rounded-md overflow-hidden">
           {book.coverUrl ? (
