@@ -6,7 +6,7 @@ import {
   updateBookStatus,
   removeBookFromLibrary,
 } from "../services/bookLibrary";
-import { AddBookRequest, BookStatus } from "../../types/book";
+import { AddBookRequest, BookStatus } from "../types/book";
 
 export async function bookRoutes(app: FastifyInstance) {
   // Search Google Books

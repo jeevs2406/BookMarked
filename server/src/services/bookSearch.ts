@@ -1,4 +1,4 @@
-import type { BookSearchResult } from "../../types/book";
+import type { BookSearchResult } from "../types/book";
 
 export async function searchBooks(query: string): Promise<BookSearchResult[]> {
   console.log("This is called");

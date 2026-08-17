@@ -1,10 +1,6 @@
 import { useState, useEffect } from "react";
 import { BookCard } from "../components/BookCard";
-import type {
-  BookSearchResult,
-  LibraryBook,
-  BookStatus,
-} from "../../types/book";
+import type { BookSearchResult, LibraryBook, BookStatus } from "../types/book";
 
 export function BrowseBooks() {
   const [query, setQuery] = useState("");

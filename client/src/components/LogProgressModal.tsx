@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import type { LibraryBook } from "../../types/book";
+import type { LibraryBook } from "../types/book";
 
 interface LogProgressModalProps {
   book: LibraryBook;

@@ -3,7 +3,7 @@ import {
   createReadingSession,
   getReadingSessions,
 } from "../services/readingSession";
-import type { CreateReadingSessionRequest } from "../../types/session";
+import type { CreateReadingSessionRequest } from "../types/session";
 
 export async function sessionRoutes(app: FastifyInstance) {
   app.get("/api/books/reading-sessions", async () => {

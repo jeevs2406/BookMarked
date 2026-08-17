@@ -1,7 +1,7 @@
 import { db } from "../db/db.connect";
 import { eq } from "drizzle-orm";
 import { books } from "../db/schema";
-import type { BookStatus, AddBookRequest } from "../../types/book";
+import type { BookStatus, AddBookRequest } from "../types/book";
 
 export async function getLibraryBooks() {
   return await db.select().from(books);

@@ -3,11 +3,7 @@ import { useEffect, useState } from "react";
 import { BookCard } from "../components/BookCard";
 import { LogProgressModal } from "../components/LogProgressModal";
 
-import type {
-  BookSearchResult,
-  LibraryBook,
-  BookStatus,
-} from "../../types/book";
+import type { BookSearchResult, LibraryBook, BookStatus } from "../types/book";
 
 export function Library() {
   const [books, setBooks] = useState<LibraryBook[]>([]);
